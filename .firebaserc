@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "carecast-v2"
+  },
+  "targets": {
+    "carecast-v2": {
+      "hosting": {
+        "app": [
+          "carecast-v2"
+        ],
+        "marketing": [
+          "carecast-marketing-site"
+        ]
+      }
+    }
+  }
+}
