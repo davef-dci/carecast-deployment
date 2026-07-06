@@ -64,6 +64,12 @@
         "firebase.json",
         "**/.*",
         "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "/oakwood",
+          "destination": "/oakwood.html"
+        }
       ]
     }
   ],
