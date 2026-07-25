@@ -122,6 +122,9 @@ $envVars = @(
   "CARECAST_API_RELEASE=$ApiRelease"
   "CARECAST_API_REVISION=$apiRevision"
   "CARECAST_API_BUILD_TIME=$buildTime"
+  "CARECAST_WEBAPP_RELEASE=$WebappRelease"
+  "CARECAST_WEBAPP_REVISION=$webappRevision"
+  "CARECAST_WEBAPP_BUILD_TIME=$buildTime"
 ) -join ","
 
 if (-not $SkipLocalBuild) {
