@@ -56,6 +56,28 @@ function Assert-NoLocalhostApiInDist([string]$DistPath) {
   }
 }
 
+function Assert-ApiDeploymentHealth(
+  [string]$ServiceUrl,
+  [string]$ExpectedRelease,
+  [string]$ExpectedRevision
+) {
+  $timestamp = Get-Date -Format yyyyMMddHHmmss
+  $healthUrl = "$ServiceUrl/health?ts=$timestamp"
+
+  Write-Host "Verifying API deployment health: $healthUrl" -ForegroundColor Cyan
+  $health = Invoke-RestMethod -Uri $healthUrl -Method Get
+
+  if ($health.release -ne $ExpectedRelease) {
+    throw "API deploy verification failed. Expected release '$ExpectedRelease' but /health returned '$($health.release)'."
+  }
+
+  if ($health.revision -ne $ExpectedRevision) {
+    throw "API deploy verification failed. Expected revision '$ExpectedRevision' but /health returned '$($health.revision)'."
+  }
+
+  Write-Host "API deployment verified: release $($health.release), revision $($health.revision)" -ForegroundColor Green
+}
+
 $webappRevision = (git -C ./care-cast-webapp rev-parse --short=12 HEAD).Trim()
 $apiRevision = (git -C ./care-cast-api rev-parse --short=12 HEAD).Trim()
 $buildTime = (Get-Date).ToUniversalTime().ToString("o")
@@ -138,6 +160,34 @@ if (-not $SkipApiDeploy) {
     --set-env-vars $envVars `
     --service-account "firebase-adminsdk-fbsvc@carecast-v2.iam.gserviceaccount.com" `
     --no-invoker-iam-check
+
+  if ($LASTEXITCODE -ne 0) {
+    throw "Cloud Run API deploy failed."
+  }
+
+  Write-Host "Routing Cloud Run traffic to the latest API revision..." -ForegroundColor Cyan
+  & "${env:ProgramFiles(x86)}\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd" run services update-traffic $ApiService `
+    --project $ProjectId `
+    --region $Region `
+    --to-latest
+
+  if ($LASTEXITCODE -ne 0) {
+    throw "Cloud Run API traffic update failed."
+  }
+
+  $apiServiceUrl = (& "${env:ProgramFiles(x86)}\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd" run services describe $ApiService `
+    --project $ProjectId `
+    --region $Region `
+    --format "value(status.url)").Trim()
+
+  if (-not $apiServiceUrl) {
+    throw "Could not determine Cloud Run API service URL for deployment verification."
+  }
+
+  Assert-ApiDeploymentHealth `
+    -ServiceUrl $apiServiceUrl `
+    -ExpectedRelease $ApiRelease `
+    -ExpectedRevision $apiRevision
 } else {
   Write-Host "Skipping API deploy (--SkipApiDeploy)." -ForegroundColor Yellow
 }
