@@ -71,4 +71,3 @@ carecast-icon-prompts.txt
 # Potentially sensitive local exports
 firestore-recovery-users.json
 *-recovery-*.json
-*recovery-users*.json

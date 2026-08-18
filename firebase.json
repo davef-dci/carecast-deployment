@@ -76,5 +76,15 @@
   "firestore": {
     "rules": "care-cast-api/firestore.rules",
     "indexes": "care-cast-api/firestore.indexes.json"
+  },
+  "emulators": {
+    "firestore": {
+      "port": 8090
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    },
+    "singleProject": true
   }
 }
