@@ -5,7 +5,12 @@
   "scripts": {
     "start": "npm-run-all --parallel start:api start:webapp",
     "start:api": "cd care-cast-api && npm run dev",
-    "start:webapp": "cd care-cast-webapp && cross-env VITE_API_URL=http://localhost:8080/api npm run dev"
+    "start:webapp": "cd care-cast-webapp && cross-env VITE_API_URL=http://localhost:8080/api npm run dev",
+
+    "start:emulated": "npm-run-all --parallel emulators start:api:emulator start:webapp",
+    "start:api:emulator": "cd care-cast-api && cross-env FIRESTORE_EMULATOR_HOST=localhost:8090 npm run dev",
+    "emulators": "firebase emulators:start --import=./firestore-snapshot --export-on-exit",
+    "emulators:fresh": "firebase emulators:start --export-on-exit=./firestore-snapshot"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

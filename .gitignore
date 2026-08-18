@@ -11,6 +11,9 @@ CareCast-Secrets/
 Secrets/
 .gcloud/
 .firebase/
+
+# Local Firestore emulator snapshot — real resident/family data, never commit
+firestore-snapshot/
 .claude/
 .agents/
 .codex/
