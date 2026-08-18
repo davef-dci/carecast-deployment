@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// LOCAL EMULATOR ONLY — never deployed. deploy-v2.ps1 always scopes deploys
+// to `--only hosting:app`, and real Storage access control in production is
+// enforced via GCS uniform bucket-level IAM (see care-cast-api/src/config/storage.ts),
+// not Firebase Storage Rules. This file exists solely so the Firebase Storage
+// emulator has something to load for local dev.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}
