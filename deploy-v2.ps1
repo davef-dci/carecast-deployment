@@ -4,6 +4,7 @@ param(
   [string]$ApiService = "care-cast-api-v2",
   [string]$WebAppUrl = "https://carecast-v2.web.app",
   [string]$ApiBaseUrl = "https://care-cast-api-v2-524384697116.us-central1.run.app",
+  [string]$ClientUrl = "https://app.carecast.app",
   [string]$CareCastRelease = "",
   [string]$WebappRelease = "",
   [string]$ApiRelease = "",
@@ -108,6 +109,7 @@ $envVars = @(
   "CARECAST_RELEASE=$CareCastRelease"
   "WEBAPP_BASE_URL=$WebAppUrl"
   "API_BASE_URL=$ApiBaseUrl"
+  "CLIENT_URL=$ClientUrl"
   "FIREBASE_STORAGE_BUCKET=carecast-v2.firebasestorage.app"
   "FIREBASE_MEDIA_STORAGE_FOLDER_NAME=family_photos"
   "FIREBASE_THUMBNAIL_STORAGE_FOLDER_NAME=thumbnails"
