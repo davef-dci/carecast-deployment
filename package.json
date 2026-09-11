@@ -8,8 +8,12 @@
     "start:webapp": "cd care-cast-webapp && cross-env VITE_API_URL=http://localhost:8080/api npm run dev",
 
     "start:sandbox": "npm-run-all --parallel start:api:sandbox start:webapp:sandbox",
-    "start:api:sandbox": "cd care-cast-api && npm run dev:sandbox",
-    "start:webapp:sandbox": "cd care-cast-webapp && npm run dev:sandbox",
+    "start:api:sandbox": "cd care-cast-api && git checkout release/october-2026 && npm run dev:sandbox",
+    "start:webapp:sandbox": "cd care-cast-webapp && git checkout release/october-2026 && npm run dev:sandbox",
+
+    "start:sandbox:gg": "npm-run-all --parallel start:api:sandbox:gg start:webapp:sandbox:gg",
+    "start:api:sandbox:gg": "cd ../carecast-gg-api && npm run dev:sandbox",
+    "start:webapp:sandbox:gg": "cd ../carecast-gg-webapp && npm run dev:sandbox",
 
     "start:emulated": "npm-run-all --parallel emulators start:api:emulator start:webapp",
     "start:api:emulator": "cd care-cast-api && cross-env FIRESTORE_EMULATOR_HOST=localhost:8090 FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199 npm run dev",
