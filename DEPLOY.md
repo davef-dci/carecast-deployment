@@ -42,8 +42,19 @@ behaves identically to every prod deploy before sandbox support existed.
   -ClientUrl https://carecast-sandbox.web.app `
   -StorageBucket carecast-sandbox.firebasestorage.app `
   -ServiceAccount firebase-adminsdk-fbsvc@carecast-sandbox.iam.gserviceaccount.com `
-  -HostingTarget sandbox-app
+  -HostingTarget sandbox-app `
+  -WebappBuildScript build:sandbox
 ```
+
+`-WebappBuildScript build:sandbox` matters and is easy to forget: Vite selects which
+`.env.<mode>` file to load by *build mode*, not by anything this script passes as a
+project id. Without it, the webapp builds in the default "production" mode and bakes in
+`care-cast-webapp/.env`'s Firebase client config -- which is `carecast-v2`'s (prod)
+`apiKey`/`authDomain`/etc. The site *looks* fine (loads, styled correctly) but Google
+Sign-In fails with `auth/unauthorized-domain`, because the deployed page is secretly
+asking prod's Firebase project "is carecast-sandbox.web.app allowed?" instead of asking
+sandbox's. `care-cast-webapp/.env.sandbox` already has the correct sandbox values --
+`build:sandbox` (`vite build --mode sandbox`) is what tells Vite to use it.
 
 Verify at `https://carecast-sandbox.web.app` afterward.
 
@@ -54,15 +65,19 @@ Split it into two runs instead of one, so a problem shows up at the cheaper step
 ```powershell
 # Step A -- API only. Deploys, then calls its own /health endpoint and confirms
 # the release/revision match what was just deployed -- fails loudly here if
-# something (a secret, the service account's permissions) is wrong.
+# something (a secret, the service account's permissions) is wrong. Still builds
+# the webapp locally even though it isn't deployed yet (only -SkipLocalBuild
+# skips that) -- keep -WebappBuildScript here too, since Step B's -SkipLocalBuild
+# trusts whatever Step A already built.
 .\deploy-v2.ps1 -ProjectId carecast-sandbox -ApiService care-cast-api-sandbox `
   -WebAppUrl https://carecast-sandbox.web.app -ClientUrl https://carecast-sandbox.web.app `
   -StorageBucket carecast-sandbox.firebasestorage.app `
   -ServiceAccount firebase-adminsdk-fbsvc@carecast-sandbox.iam.gserviceaccount.com `
-  -HostingTarget sandbox-app -SkipWebDeploy
+  -HostingTarget sandbox-app -WebappBuildScript build:sandbox -SkipWebDeploy
 
 # Step B -- webapp only, once Step A is green. -SkipLocalBuild skips rebuilding
-# since Step A just built it; drop that flag to rebuild anyway.
+# since Step A just built it (in the right mode); drop that flag to rebuild anyway
+# (keep -WebappBuildScript build:sandbox if you do).
 .\deploy-v2.ps1 -ProjectId carecast-sandbox -WebAppUrl https://carecast-sandbox.web.app `
   -ClientUrl https://carecast-sandbox.web.app -HostingTarget sandbox-app `
   -SkipApiDeploy -SkipLocalBuild

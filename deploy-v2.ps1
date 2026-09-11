@@ -9,6 +9,7 @@ param(
   [string]$ServiceAccount = "firebase-adminsdk-fbsvc@carecast-v2.iam.gserviceaccount.com",
   [string]$GoogleRedirectUri = "https://care-cast-api-v2-524384697116.us-central1.run.app/api/auth/google/gcoauth2callback",
   [string]$HostingTarget = "app",
+  [string]$WebappBuildScript = "build",
   [string]$CareCastRelease = "",
   [string]$WebappRelease = "",
   [string]$ApiRelease = "",
@@ -151,7 +152,14 @@ if (-not $SkipLocalBuild) {
   $env:VITE_CARECAST_WEBAPP_RELEASE = $WebappRelease
   $env:VITE_CARECAST_WEBAPP_REVISION = $webappRevision
   $env:VITE_CARECAST_WEBAPP_BUILD_TIME = $buildTime
-  Invoke-Checked "npm run build" "Webapp build failed."
+  # Vite's env-file selection is mode-based (.env.<mode>), not project-based --
+  # "npm run build" (mode "production") always loads the base .env, which is
+  # carecast-v2's Firebase client config regardless of -ProjectId. Pass
+  # -WebappBuildScript build:sandbox for a sandbox deploy so Vite loads
+  # .env.sandbox instead (correct authDomain, apiKey, etc. for that project) --
+  # otherwise the deployed site silently authenticates against the WRONG
+  # Firebase project and Google Sign-In fails with auth/unauthorized-domain.
+  Invoke-Checked "npm run $WebappBuildScript" "Webapp build failed."
   Assert-NoLocalhostApiInDist -DistPath (Join-Path (Get-Location) "dist")
   Remove-Item Env:VITE_CARECAST_RELEASE -ErrorAction SilentlyContinue
   Remove-Item Env:VITE_CARECAST_WEBAPP_RELEASE -ErrorAction SilentlyContinue
