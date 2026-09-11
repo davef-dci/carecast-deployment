@@ -44,8 +44,12 @@ where each value comes from.
 ```powershell
 cd D:\software_projects\CareCast
 . .\Secrets\set-deploy-secrets.ps1
-firebase login --reauth   # only if firebase/gcloud auth has expired
+firebase login --reauth
 ```
+
+`firebase login --reauth` in practice is needed before basically every deploy session, not
+just after a long gap — do it every time rather than skipping it and finding out partway
+through a deploy.
 
 The leading `. ` before the secrets script matters — it "dot-sources" it so the variables
 land in your current shell instead of a throwaway child process.
@@ -59,6 +63,22 @@ land in your current shell instead of a throwaway child process.
 That's it — same one-liner as always. Every parameter it needs defaults to the exact
 production values (`carecast-v2`, `care-cast-api-v2`, `app.carecast.app`, etc.), so this
 behaves identically to every prod deploy before sandbox support existed.
+
+### Deploying more than once in a day
+
+`$CareCastRelease` defaults to `yyyy.MM.dd-a` — date only, no time. A second prod deploy
+on the same calendar day silently reuses the exact same release label as the first (no
+error, no warning) unless you override it, which makes the two deploys indistinguishable
+later when you're trying to figure out which one shipped a given regression. Bump the
+suffix by hand for any repeat deploy:
+
+```powershell
+.\deploy-v2.ps1 -CareCastRelease "2026.09.09-b"
+```
+
+`-WebappRelease` and `-ApiRelease` each fall back to `-CareCastRelease` when not set
+separately, so passing just that one flag is enough — pass the other two too only if you
+want the API and webapp release strings to diverge (e.g. an API-only hotfix).
 
 ## Deploy sandbox
 
