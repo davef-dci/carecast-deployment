@@ -4,6 +4,34 @@ Two targets now: **production** (`carecast-v2`) and **sandbox** (`carecast-sandb
 script, `deploy-v2.ps1`, run from the repo root either way — the difference is which
 parameters you pass. No parameters = production, unchanged from before.
 
+## Environments at a glance
+
+This file only covers the two *deployed* (Cloud Run + Hosting) targets below. There are
+three more, all run locally via the root `package.json` — worth knowing about so you pick
+the cheapest one that actually tests what you're changing:
+
+| Command                  | Runs where       | Talks to                                    |
+|---------------------------|------------------|----------------------------------------------|
+| `npm run start`           | Local processes  | Real **prod** Firestore/Storage (`carecast-v2`) |
+| `npm run start:sandbox`   | Local processes  | Real **sandbox** Firestore/Storage (`carecast-sandbox`) |
+| `npm run start:emulated`  | Local processes  | **Local** Firestore + Storage emulator, seeded from a gitignored real-data snapshot — no cloud project touched |
+| `deploy-v2.ps1 -ProjectId carecast-sandbox ...` | Cloud Run + Hosting | Real **sandbox** Firestore/Storage |
+| `deploy-v2.ps1` (no params) | Cloud Run + Hosting | Real **prod** Firestore/Storage — the actual release |
+
+The emulator isn't a "safer sandbox" — sandbox is safe too, now that it's a real, isolated
+project. The emulator's actual value is different: zero cost, no network, and an instant
+reset (`emulators:fresh` wipes state; `emulators` re-imports the snapshot), which makes it
+the right choice for anything destructive or repetitive — dry-running a migration script,
+churning test data, a tight edit/test loop — without leaving junk behind in an environment
+other testing (or a real guest) might be using at the same time.
+
+What it *can't* test is real infrastructure: Cloud Run, Hosting rewrites, CORS, Firebase
+Auth against a real authorized-domains list, IAM/service-account permissions, real Storage
+URLs. Every sandbox-deploy bug fixed while standing this up (wrong Firebase project baked
+into the build, a missing CORS origin, three IAM grants) was in that category — the
+emulator is structurally incapable of catching it, since none of that infrastructure exists
+in emulator-land. Sandbox and the emulator test disjoint failure modes; keep using both.
+
 ## One-time setup (per machine)
 
 Fill in `Secrets\set-deploy-secrets.ps1` with your real credentials (Anthropic key, cron
