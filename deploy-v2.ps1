@@ -8,6 +8,7 @@ param(
   [string]$StorageBucket = "carecast-v2.firebasestorage.app",
   [string]$ServiceAccount = "firebase-adminsdk-fbsvc@carecast-v2.iam.gserviceaccount.com",
   [string]$GoogleRedirectUri = "https://care-cast-api-v2-524384697116.us-central1.run.app/api/auth/google/gcoauth2callback",
+  [string]$HostingTarget = "app",
   [string]$CareCastRelease = "",
   [string]$WebappRelease = "",
   [string]$ApiRelease = "",
@@ -207,10 +208,12 @@ if (-not $SkipWebDeploy) {
 
   # Auth uses firebase CLI cached credentials from 'firebase login'.
   # If this fails with an auth error, run: firebase logout && firebase login
-  # Deploy from the repo root using the "app" target defined in firebase.json + .firebaserc.
+  # Deploy from the repo root using the $HostingTarget target defined in firebase.json + .firebaserc
+  # ("app" for carecast-v2, "sandbox-app" for carecast-sandbox -- each has its own /api/** rewrite
+  # so a sandbox deploy never proxies to prod's Cloud Run service).
   # Do NOT cd into care-cast-webapp — that firebase.json has no target/site field and
   # conflicts with the root .firebaserc, causing "Assertion failed: resolving hosting target".
-  firebase deploy --only hosting:app --project $ProjectId
+  firebase deploy --only hosting:$HostingTarget --project $ProjectId
   if ($LASTEXITCODE -ne 0) {
     throw "Firebase hosting deploy failed."
   }

@@ -12,6 +12,13 @@
           "carecast-marketing-site"
         ]
       }
+    },
+    "carecast-sandbox": {
+      "hosting": {
+        "sandbox-app": [
+          "carecast-sandbox"
+        ]
+      }
     }
   }
 }

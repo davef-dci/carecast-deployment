@@ -58,6 +58,48 @@
       ]
     },
     {
+      "target": "sandbox-app",
+      "public": "care-cast-webapp/dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin-allow-popups"
+            }
+          ]
+        },
+        {
+          "source": "/index.html",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        }
+      ],
+      "rewrites": [
+        {
+          "source": "/api/**",
+          "run": {
+            "serviceId": "care-cast-api-sandbox",
+            "region": "us-central1"
+          }
+        },
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    {
       "target": "marketing",
       "public": "carecast-marketing",
       "ignore": [
