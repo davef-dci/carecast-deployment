@@ -5,6 +5,9 @@ param(
   [string]$WebAppUrl = "https://carecast-v2.web.app",
   [string]$ApiBaseUrl = "https://care-cast-api-v2-524384697116.us-central1.run.app",
   [string]$ClientUrl = "https://app.carecast.app",
+  [string]$StorageBucket = "carecast-v2.firebasestorage.app",
+  [string]$ServiceAccount = "firebase-adminsdk-fbsvc@carecast-v2.iam.gserviceaccount.com",
+  [string]$GoogleRedirectUri = "https://care-cast-api-v2-524384697116.us-central1.run.app/api/auth/google/gcoauth2callback",
   [string]$CareCastRelease = "",
   [string]$WebappRelease = "",
   [string]$ApiRelease = "",
@@ -110,7 +113,7 @@ $envVars = @(
   "WEBAPP_BASE_URL=$WebAppUrl"
   "API_BASE_URL=$ApiBaseUrl"
   "CLIENT_URL=$ClientUrl"
-  "FIREBASE_STORAGE_BUCKET=carecast-v2.firebasestorage.app"
+  "FIREBASE_STORAGE_BUCKET=$StorageBucket"
   "FIREBASE_MEDIA_STORAGE_FOLDER_NAME=family_photos"
   "FIREBASE_THUMBNAIL_STORAGE_FOLDER_NAME=thumbnails"
   "FIREBASE_QR_STORAGE_FOLDER_NAME=qr_codes"
@@ -122,7 +125,7 @@ $envVars = @(
   "GMAIL_APP_PASSWORD=$($env:GMAIL_APP_PASSWORD)"
   "GOOGLE_CLIENT_ID=$($env:GOOGLE_CLIENT_ID)"
   "GOOGLE_CLIENT_SECRET=$($env:GOOGLE_CLIENT_SECRET)"
-  "GOOGLE_REDIRECT_URI=https://care-cast-api-v2-524384697116.us-central1.run.app/api/auth/google/gcoauth2callback"
+  "GOOGLE_REDIRECT_URI=$GoogleRedirectUri"
   "CARECAST_API_RELEASE=$ApiRelease"
   "CARECAST_API_REVISION=$apiRevision"
   "CARECAST_API_BUILD_TIME=$buildTime"
@@ -165,7 +168,7 @@ if (-not $SkipApiDeploy) {
     --source ./care-cast-api `
     --region $Region `
     --set-env-vars $envVars `
-    --service-account "firebase-adminsdk-fbsvc@carecast-v2.iam.gserviceaccount.com" `
+    --service-account $ServiceAccount `
     --no-invoker-iam-check
 
   if ($LASTEXITCODE -ne 0) {
