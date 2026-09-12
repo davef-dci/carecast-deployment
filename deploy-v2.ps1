@@ -8,6 +8,7 @@ param(
   [string]$StorageBucket = "carecast-v2.firebasestorage.app",
   [string]$ServiceAccount = "firebase-adminsdk-fbsvc@carecast-v2.iam.gserviceaccount.com",
   [string]$GoogleRedirectUri = "https://care-cast-api-v2-524384697116.us-central1.run.app/api/auth/google/gcoauth2callback",
+  [string]$Memory = "2Gi",
   [string]$HostingTarget = "app",
   [string]$WebappBuildScript = "build",
   [string]$CareCastRelease = "",
@@ -178,6 +179,7 @@ if (-not $SkipApiDeploy) {
     --region $Region `
     --set-env-vars $envVars `
     --service-account $ServiceAccount `
+    --memory $Memory `
     --no-invoker-iam-check
 
   if ($LASTEXITCODE -ne 0) {

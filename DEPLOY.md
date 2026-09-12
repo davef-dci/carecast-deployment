@@ -154,6 +154,16 @@ Net effect: if you ever get a parameter wrong, the failure mode is either "it er
 loudly" or "it just deployed prod again" (if you forgot to override the prod defaults) —
 never a silent mix of the two environments.
 
+- **`-Memory` defaults to `2Gi`, matching prod.** `gcloud run deploy` preserves whatever a
+  service is already configured with for any flag you don't pass, which is exactly how
+  prod ended up staying at `2Gi` deploy after deploy despite this script never mentioning
+  memory at all — that value was set once, outside the script, long before sandbox existed.
+  A brand-new service has no such history to inherit from, so sandbox launched at Cloud
+  Run's bare platform default of `512Mi` and stayed there until a parallel 5-page publish
+  (Personal Events testing, 2026-09-12) OOM-killed the container mid-request. Passing
+  `--memory` explicitly means a fresh environment always starts at the same footprint as
+  prod instead of silently inheriting nothing.
+
 ## What sandbox does NOT have yet (deferred, not needed for current testing)
 
 - `-ApiBaseUrl` and `-GoogleRedirectUri` are left at their **prod** defaults for sandbox
