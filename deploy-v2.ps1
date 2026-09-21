@@ -110,32 +110,50 @@ Write-Host "  API release:      $ApiRelease" -ForegroundColor Cyan
 Write-Host "  Webapp: $webappRevision" -ForegroundColor Cyan
 Write-Host "  API:    $apiRevision" -ForegroundColor Cyan
 
-$envVars = @(
-  "NODE_ENV=production"
-  "CARECAST_RELEASE=$CareCastRelease"
-  "WEBAPP_BASE_URL=$WebAppUrl"
-  "API_BASE_URL=$ApiBaseUrl"
-  "CLIENT_URL=$ClientUrl"
-  "FIREBASE_STORAGE_BUCKET=$StorageBucket"
-  "FIREBASE_MEDIA_STORAGE_FOLDER_NAME=family_photos"
-  "FIREBASE_THUMBNAIL_STORAGE_FOLDER_NAME=thumbnails"
-  "FIREBASE_QR_STORAGE_FOLDER_NAME=qr_codes"
-  "ANTHROPIC_API_KEY=$($env:ANTHROPIC_API_KEY)"
-  "CRON_SECRET=$($env:CRON_SECRET)"
-  "ADMIN_UIDS=$($env:ADMIN_UIDS)"
-  "ADMIN_EMAILS=$($env:ADMIN_EMAILS)"
-  "GMAIL_USER=$($env:GMAIL_USER)"
-  "GMAIL_APP_PASSWORD=$($env:GMAIL_APP_PASSWORD)"
-  "GOOGLE_CLIENT_ID=$($env:GOOGLE_CLIENT_ID)"
-  "GOOGLE_CLIENT_SECRET=$($env:GOOGLE_CLIENT_SECRET)"
-  "GOOGLE_REDIRECT_URI=$GoogleRedirectUri"
-  "CARECAST_API_RELEASE=$ApiRelease"
-  "CARECAST_API_REVISION=$apiRevision"
-  "CARECAST_API_BUILD_TIME=$buildTime"
-  "CARECAST_WEBAPP_RELEASE=$WebappRelease"
-  "CARECAST_WEBAPP_REVISION=$webappRevision"
-  "CARECAST_WEBAPP_BUILD_TIME=$buildTime"
-) -join ","
+$envVarsMap = [ordered]@{
+  NODE_ENV                               = "production"
+  CARECAST_RELEASE                       = $CareCastRelease
+  WEBAPP_BASE_URL                        = $WebAppUrl
+  API_BASE_URL                           = $ApiBaseUrl
+  CLIENT_URL                             = $ClientUrl
+  FIREBASE_STORAGE_BUCKET                = $StorageBucket
+  FIREBASE_MEDIA_STORAGE_FOLDER_NAME     = "family_photos"
+  FIREBASE_THUMBNAIL_STORAGE_FOLDER_NAME = "thumbnails"
+  FIREBASE_QR_STORAGE_FOLDER_NAME        = "qr_codes"
+  ANTHROPIC_API_KEY                      = $env:ANTHROPIC_API_KEY
+  CRON_SECRET                            = $env:CRON_SECRET
+  ADMIN_UIDS                             = $env:ADMIN_UIDS
+  ADMIN_EMAILS                           = $env:ADMIN_EMAILS
+  GMAIL_USER                             = $env:GMAIL_USER
+  GMAIL_APP_PASSWORD                     = $env:GMAIL_APP_PASSWORD
+  GOOGLE_CLIENT_ID                       = $env:GOOGLE_CLIENT_ID
+  GOOGLE_CLIENT_SECRET                   = $env:GOOGLE_CLIENT_SECRET
+  GOOGLE_REDIRECT_URI                    = $GoogleRedirectUri
+  CARECAST_API_RELEASE                   = $ApiRelease
+  CARECAST_API_REVISION                  = $apiRevision
+  CARECAST_API_BUILD_TIME                = $buildTime
+  CARECAST_WEBAPP_RELEASE                = $WebappRelease
+  CARECAST_WEBAPP_REVISION               = $webappRevision
+  CARECAST_WEBAPP_BUILD_TIME             = $buildTime
+}
+# gcloud's --set-env-vars takes one comma-delimited KEY=VALUE,KEY=VALUE
+# string -- fine until a value contains a literal comma itself (ADMIN_EMAILS's
+# comma-separated email list), which gcloud can't tell apart from the next
+# pair ("Bad syntax for dict arg"). gcloud's own alternate-delimiter escape
+# (a "^X^" prefix) looks like the fix, but gcloud.cmd is a batch-file wrapper
+# -- invoking it via PowerShell's `&` routes the argument through cmd.exe's
+# OWN parser first, where "^" is itself cmd's escape character, and it
+# silently stripped the prefix before gcloud ever saw it (confirmed by
+# reading back the deployed revision's env vars afterward -- badly garbled).
+# --env-vars-file sidesteps all three parsing layers (PowerShell / cmd.exe /
+# gcloud) at once by reading the pairs from a YAML file instead of a shell
+# argument, so nothing here needs shell-escaping at all.
+$envVarsFile = Join-Path $env:TEMP "carecast-deploy-env-vars-$([guid]::NewGuid()).yaml"
+$yamlLines = foreach ($key in $envVarsMap.Keys) {
+  $escaped = [string]$envVarsMap[$key] -replace '\\', '\\' -replace '"', '\"'
+  "$key`: `"$escaped`""
+}
+Set-Content -Path $envVarsFile -Value $yamlLines -Encoding utf8
 
 if (-not $SkipLocalBuild) {
   Write-Host "Running local API build check (TypeScript compile)..." -ForegroundColor Cyan
@@ -177,12 +195,15 @@ if (-not $SkipApiDeploy) {
     --project $ProjectId `
     --source ./care-cast-api `
     --region $Region `
-    --set-env-vars $envVars `
+    --env-vars-file $envVarsFile `
     --service-account $ServiceAccount `
     --memory $Memory `
     --no-invoker-iam-check
 
-  if ($LASTEXITCODE -ne 0) {
+  $apiDeployExitCode = $LASTEXITCODE
+  Remove-Item $envVarsFile -ErrorAction SilentlyContinue
+
+  if ($apiDeployExitCode -ne 0) {
     throw "Cloud Run API deploy failed."
   }
 
